@@ -36,6 +36,7 @@ from .texture import BaseTexture, Texture2D, Texture3D
 from ..util import logger
 from .util import check_enum 
 from ..ext.six import string_types
+from .context import get_current_canvas
 
 
 # ----------------------------------------------------------- Program class ---
@@ -393,21 +394,32 @@ class Program(GLObject):
             raise RuntimeError('All attributes must have the same size, got:\n'
                                '%s' % msg)
         
+        # Get the glir queue that we need now
+        canvas = get_current_canvas()
+        assert canvas is not None
+        
+        for ob in self._user_variables.values():
+            if isinstance(ob, GLObject):
+                ob._associate_canvas(canvas)
+        self._associate_canvas(canvas)
+        
         # Indexbuffer
         if isinstance(indices, IndexBuffer):
+            indices._associate_canvas(canvas)
             logger.debug("Program drawing %r with index buffer" % mode)
             gltypes = {np.dtype(np.uint8): 'UNSIGNED_BYTE',
                        np.dtype(np.uint16): 'UNSIGNED_SHORT',
                        np.dtype(np.uint32): 'UNSIGNED_INT'}
             selection = indices.id, gltypes[indices.dtype], indices.size
-            self._glir.command('DRAW', self._id, mode, selection)
+            canvas.glir.command('DRAW', self._id, mode, selection)
         elif indices is None:
             selection = 0, attributes[0].size
             logger.debug("Program drawing %r with %r" % (mode, selection))
-            self._glir.command('DRAW', self._id, mode, selection)
+            canvas.glir.command('DRAW', self._id, mode, selection)
         else:
             raise TypeError("Invalid index: %r (must be IndexBuffer)" %
                             indices)
         
         # Process GLIR commands
-        self._glir.flush()
+        canvas.context.glir.flush()
+        canvas.glir.flush()

@@ -312,7 +312,10 @@ class DataBufferView(DataBuffer):
     It is gnerally not necessary to instantiate this class manually; use 
     ``base_buffer[key]`` instead.
     """
-
+    
+    # Note that this class is a bit evil: it is a subclass of GLObject,
+    # Buffer and DataBuffer, but any of these __init__'s are not called ...
+    
     def __init__(self, base, key):
         # Note how this never runs the super's __init__,
         # all attributes must thus be set here ...
@@ -352,6 +355,10 @@ class DataBufferView(DataBuffer):
         self._size = stop - start
         self._dtype = base.dtype
         self._nbytes = self.size * self.itemsize
+    
+    def _associate_canvas(self, canvas):
+        self.base._associate_canvas(canvas)
+        self._associate_canvas = lambda x=None: None
     
     @property
     def id(self):

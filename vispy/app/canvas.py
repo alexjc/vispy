@@ -14,8 +14,10 @@ from ..util.dpi import get_dpi
 from ..util import config
 from ..ext.six import string_types
 from . import Application, use_app
-from ..gloo.context import (GLContext, take_pending_glir_queue, 
-                            set_current_canvas, forget_canvas)
+from ..gloo import GlooFunctions
+from ..gloo.glir import GlirQueue
+from ..gloo.context import (GLContext, set_current_canvas, forget_canvas)
+
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -152,15 +154,10 @@ class Canvas(object):
                             'a Canvas with the same backend, not %s'
                             % type(context))
         
-        # Get the glir queue and then register this canvas as active
-        self._glir = take_pending_glir_queue()
+        # Get the glir queue (with shared parser) and make this canvas active
+        self._glir = GlirQueue(parser=context.glir.parser)
+        self._gloo = GlooFunctions(self._glir)
         set_current_canvas(self)
-        
-        # Glir queues are per-canvas, Glir parsers per-context
-        if hasattr(context, '_glir_parser'):
-            self._glir.parser = context._glir_parser
-        else:
-            context._glir_parser = self._glir.parser
         
         # Deal with special keys
         self._set_keys(keys)
@@ -243,9 +240,18 @@ class Canvas(object):
     
     @property
     def glir(self):
-        """ The GLIR queue for this canvas: the list of GLIR commands.
+        """ The GLIR queue for this canvas. This queue stores all GLIR
+        commands that do not apply to shared objects, such as function
+        calls and things related to framebuffers. Shared state is handled
+        via the queue at canvas.context.glir.
         """
         return self._glir
+    
+    @property
+    def gloo(self):
+        """ The gloo functions applicable to this canvas.
+        """
+        return self._gloo
     
     @property
     def app(self):

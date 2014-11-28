@@ -19,7 +19,7 @@ an OpenGL context.
 from copy import deepcopy
 import weakref
 
-from .glir import GlirQueue
+from .glir import GlirParser, GlirQueue
 
 
 _default_dict = dict(red_size=8, green_size=8, blue_size=8, alpha_size=8,
@@ -28,7 +28,6 @@ _default_dict = dict(red_size=8, green_size=8, blue_size=8, alpha_size=8,
 
 
 canvasses = []
-pending_glir_queue = GlirQueue()
 
 
 def get_default_config():
@@ -40,22 +39,6 @@ def get_default_config():
         Dictionary of config values.
     """
     return deepcopy(_default_dict)
-
-
-def get_current_glir_queue():
-    """ Get the current GLIR queue
-    
-    This will be the glir queue on the current canvas, unless there
-    is no canvas available. In this case a new GLIR queue is provided
-    which is associated with the first canvas that gets created.
-    
-    Used by the gloo objects to acquire their glir queue.
-    """
-    canvas = get_current_canvas()
-    if canvas is not None:
-        return canvas.glir
-    else:
-        return pending_glir_queue
 
 
 def get_current_canvas():
@@ -101,17 +84,6 @@ def forget_canvas(canvas):
     canvasses[:] = [weakref.ref(c) for c in cc]
 
 
-def take_pending_glir_queue():
-    """ Get the current pending glir queue object and replace it
-    with a new glir queue. Used by the Canvas class to get a glir queue
-    to which some gloo objects may already have been associated.
-    """
-    global pending_glir_queue
-    q = pending_glir_queue
-    pending_glir_queue = GlirQueue()
-    return q
-
-
 class GLContext(object):
     """An object encapsulating data necessary for a shared OpenGL context.
     The intended use is to subclass this and implement _vispy_activate().
@@ -120,6 +92,7 @@ class GLContext(object):
     def __init__(self, config=None):
         self._backend_canvas = lambda x=None: None
         self._name = None
+        self._glir = GlirQueue(GlirParser())  # The context holds *the* parser
         self.set_config(config)
     
     def set_config(self, config):
@@ -149,6 +122,13 @@ class GLContext(object):
         """ Whether this context it currently taken.
         """
         return self._name or False
+    
+    @property
+    def glir(self):
+        """ The glir queue for the context. This queue is for objects
+        that can be shared accross canvases (if they share a contex).
+        """
+        return self._glir
     
     @property
     def backend_canvas(self):

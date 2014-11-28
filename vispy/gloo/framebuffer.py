@@ -7,6 +7,7 @@
 from .globject import GLObject
 from .texture import Texture2D
 from .wrappers import _check_valid, read_pixels
+from .context import get_current_canvas
 from ..ext.six import string_types
 
 # ------------------------------------------------------ RenderBuffer class ---
@@ -36,6 +37,12 @@ class RenderBuffer(GLObject):
         self._resizeable = True
         self.resize(shape, format)
         self._resizeable = bool(resizeable)
+    
+    def _associate_canvas(self, canvas):
+        new_queue = canvas.glir
+        new_queue.extend(self._glir.clear())
+        self._glir = new_queue
+        self._associate_canvas = lambda x=None: None
     
     @property
     def shape(self):
@@ -119,10 +126,23 @@ class FrameBuffer(GLObject):
         if stencil is not None:
             self.stencil_buffer = stencil
     
+    def _associate_canvas(self, canvas):
+        new_queue = canvas.glir
+        new_queue.extend(self._glir.clear())
+        self._glir = new_queue
+        self._associate_canvas = lambda x=None: None
+    
     def activate(self):
         """ Activate/use this frame buffer.
         """
-        self._glir.command('FRAMEBUFFER', self._id, True)
+        # Associate canvas now
+        canvas = get_current_canvas()
+        for b in (self.color_buffer, self._depth_buffer, self._stencil_buffer):
+            if hasattr(b, '_glir'):
+                b._associate_canvas(canvas)
+        self._associate_canvas(canvas)
+        # Send command
+        canvas.glir.command('FRAMEBUFFER', self._id, True)
     
     def deactivate(self):
         """ Stop using this frame buffer, the previous framebuffer will be

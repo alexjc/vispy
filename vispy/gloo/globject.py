@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 
 
-from .context import get_current_glir_queue
+from .glir import GlirQueue
 
 
 class GLObject(object):
@@ -29,12 +29,27 @@ class GLObject(object):
         GLObject._idcount += 1
         self._id = GLObject._idcount
         
-        # Store context that this object is associated to
-        self._glir = get_current_glir_queue()
+        # Create our temporary GLIR queue in which commands can be queued
+        # until we get associated with a canvas and get our final queue.
+        self._glir = GlirQueue()
         #print(self._GLIR_TYPE, 'takes', self._context)
         
         # Give glir command to create GL representation of this object
         self._glir.command('CREATE', self._id, self._GLIR_TYPE)
+    
+    def _associate_canvas(self, canvas):
+        """ This method is used to swap the temporary queue with the
+        final queue of the canvas or context. This method is called in
+        Program.draw() and FrameBuffer.activate(): these are the moments
+        that gloo objects get associated. This method replaces itself
+        with a dummy function: all calls but the first should just
+        return asap. Some classes override this method to use the queue
+        of the canvas rather than the context.
+        """
+        new_queue = canvas.context.glir
+        new_queue.extend(self._glir.clear())
+        self._glir = new_queue
+        self._associate_canvas = lambda x=None: None
     
     def __del__(self):
         # You never know when this is goint to happen. The window might

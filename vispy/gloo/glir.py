@@ -41,12 +41,11 @@ class GlirQueue(object):
     plugin mechanism.
     """
     
-    def __init__(self):
+    def __init__(self, parser=None):
         self._commands = []
-        self._parser = GlirParser()
         self._invalid_objects = set()
         self._verbose = False
-        # todo: allow different kind of parsers, like a parser that sends to JS
+        self.parser = parser
 
     @property
     def parser(self):
@@ -55,12 +54,15 @@ class GlirQueue(object):
 
     @parser.setter
     def parser(self, parser):
+        assert isinstance(parser, BaseGlirParser) or parser is None
         self._parser = parser
 
     def is_remote(self):
         """ Get whether the GLIR commands are processed in this process
         or remotely. In the latter case, gloo.gl cannot be used directly.
         """
+        if self._parser is None:
+            raise RuntimeError('Cannot determine is_remote if parser is None')
         return self._parser.is_remote()
     
     def set_verbose(self, vebose):
@@ -102,9 +104,16 @@ class GlirQueue(object):
         self._commands, ret = [], self._commands
         return ret
     
+    def extend(self, commands):
+        """ Add a list of commands to the queue.
+        """
+        self._commands.extend(commands)
+    
     def flush(self, event=False):
         """ Flush all current commands to the GLIR interpreter.
         """
+        if self._parser is None:
+            raise RuntimeError('Cannot flush queue if parser is None')
         if self._verbose:
             self.show()
         self._parser.parse(self._filter(self.clear()))
@@ -222,6 +231,7 @@ class GlirParser(BaseGlirParser):
     def __init__(self):
         self._objects = {}
         self._invalid_objects = set()
+        
         self._classmap = {'Program': GlirProgram,
                           'VertexBuffer': GlirVertexBuffer,
                           'IndexBuffer': GlirIndexBuffer,
@@ -230,6 +240,7 @@ class GlirParser(BaseGlirParser):
                           'RenderBuffer': GlirRenderBuffer,
                           'FrameBuffer': GlirFrameBuffer,
                           }
+        
         # We keep a dict that the GLIR objects use for storing
         # per-context information. This dict is cleared each time
         # that the context is made current. This seems necessary for
