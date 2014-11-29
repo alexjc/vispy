@@ -104,10 +104,13 @@ class GlirQueue(object):
         self._commands, ret = [], self._commands
         return ret
     
-    def extend(self, commands):
+    def push(self, commands, first=False):
         """ Add a list of commands to the queue.
         """
-        self._commands.extend(commands)
+        if first:
+            self._commands = commands + self._commands
+        else:
+            self._commands.extend(commands)
     
     def flush(self, event=False):
         """ Flush all current commands to the GLIR interpreter.
@@ -1015,7 +1018,10 @@ class GlirFrameBuffer(GlirObject):
                                          gl.GL_RENDERBUFFER, 0)
         else:
             buffer = self._parser.get_object(buffer_id)
-            if isinstance(buffer, GlirRenderBuffer):
+            if buffer is None:
+                raise ValueError("Unknown buffer with id %i for attachement" % 
+                                 buffer_id)
+            elif isinstance(buffer, GlirRenderBuffer):
                 buffer.activate()
                 gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, attachment,
                                              gl.GL_RENDERBUFFER, buffer.handle)

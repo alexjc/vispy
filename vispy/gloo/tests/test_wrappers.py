@@ -11,14 +11,20 @@ from vispy import gloo
 from vispy.gloo import gl
 from vispy.app import Canvas
 from vispy.testing import requires_application, run_tests_if_main
-from vispy.gloo import read_pixels
+from vispy.gloo import read_pixels, global_gloo_functions
+from vispy.gloo.glir import GlirQueue
 
 
+def teardown_module():
+    global_gloo_functions._glir = None
+
+    
 def test_wrappers_basic_glir():
     """ Test that basic gloo wrapper functions emit right GLIR command """
     
-    glir = gloo.context.get_current_glir_queue()
-    glir.clear()
+    # Install dummy queue
+    glir = GlirQueue()
+    global_gloo_functions._glir = glir
     
     funcs = [('viewport', 0, 0, 10, 10),
              ('depth_range', 0, 1),
@@ -65,8 +71,9 @@ def test_wrappers_basic_glir():
 def test_wrappers_glir():
     """ Test that special wrapper functions do what they must do """
 
-    glir = gloo.context.get_current_glir_queue()
-    glir.clear()
+    # Install dummy queue
+    glir = GlirQueue()
+    global_gloo_functions._glir = glir
     
     # Test clear() function
     gloo.clear()

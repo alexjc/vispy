@@ -398,10 +398,11 @@ class Program(GLObject):
         canvas = get_current_canvas()
         assert canvas is not None
         
+        # Associate canvas
+        self._associate_canvas(canvas)
         for ob in self._user_variables.values():
             if isinstance(ob, GLObject):
-                ob._associate_canvas(canvas)
-        self._associate_canvas(canvas)
+                ob._associate_canvas(canvas, first=True)
         
         # Indexbuffer
         if isinstance(indices, IndexBuffer):

@@ -78,6 +78,7 @@ class GlooFunctions(object):
             return self._glir
         else:
             canvas = get_current_canvas()
+            assert canvas is not None
             return canvas.glir
     
     ##########################################################################

@@ -8,15 +8,19 @@ import unittest
 import numpy as np
 
 from vispy import gloo
-from vispy.gloo.context import get_current_glir_queue
 from vispy.gloo.program import Program
 from vispy.testing import run_tests_if_main
+from vispy.gloo.context import set_current_canvas, forget_canvas
 
 
-def teardown_module():
-    # Clear the BS commands that we produced here
-    glir = get_current_glir_queue()
-    glir.clear()
+class DummyCanvas:
+    
+    def __init__(self, glir):
+        self.glir = glir
+    
+    @property
+    def context(self):
+        return self
 
 
 class ProgramTest(unittest.TestCase):
@@ -204,6 +208,8 @@ class ProgramTest(unittest.TestCase):
         flush = program._glir.flush
         program._glir.flush = lambda x=None: None
         
+        dummy_canvas = DummyCanvas(program._glir)
+        set_current_canvas(dummy_canvas)
         try:
             # Draw arrays
             program.draw('triangles')
@@ -232,6 +238,7 @@ class ProgramTest(unittest.TestCase):
             self.assertRaises(RuntimeError, program.draw, 'triangles')
         
         finally:
+            forget_canvas(dummy_canvas)
             program._glir.flush = flush
 
 run_tests_if_main()

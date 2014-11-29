@@ -37,7 +37,7 @@ class GLObject(object):
         # Give glir command to create GL representation of this object
         self._glir.command('CREATE', self._id, self._GLIR_TYPE)
     
-    def _associate_canvas(self, canvas):
+    def _associate_canvas(self, canvas, first=False):
         """ This method is used to swap the temporary queue with the
         final queue of the canvas or context. This method is called in
         Program.draw() and FrameBuffer.activate(): these are the moments
@@ -46,10 +46,13 @@ class GLObject(object):
         return asap. Some classes override this method to use the queue
         of the canvas rather than the context.
         """
-        new_queue = canvas.context.glir
-        new_queue.extend(self._glir.clear())
+        if self._GLIR_TYPE in ('RenderBuffer', 'FrameBuffer'):
+            new_queue = canvas.glir
+        else:
+            new_queue = canvas.context.glir
+        new_queue.push(self._glir.clear(), first)
         self._glir = new_queue
-        self._associate_canvas = lambda x=None: None
+        self._associate_canvas = lambda canvas=None, first=False: None
     
     def __del__(self):
         # You never know when this is goint to happen. The window might

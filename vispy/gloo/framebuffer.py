@@ -38,12 +38,6 @@ class RenderBuffer(GLObject):
         self.resize(shape, format)
         self._resizeable = bool(resizeable)
     
-    def _associate_canvas(self, canvas):
-        new_queue = canvas.glir
-        new_queue.extend(self._glir.clear())
-        self._glir = new_queue
-        self._associate_canvas = lambda x=None: None
-    
     @property
     def shape(self):
         """RenderBuffer shape """
@@ -126,23 +120,20 @@ class FrameBuffer(GLObject):
         if stencil is not None:
             self.stencil_buffer = stencil
     
-    def _associate_canvas(self, canvas):
-        new_queue = canvas.glir
-        new_queue.extend(self._glir.clear())
-        self._glir = new_queue
-        self._associate_canvas = lambda x=None: None
-    
     def activate(self):
         """ Activate/use this frame buffer.
         """
         # Associate canvas now
         canvas = get_current_canvas()
-        for b in (self.color_buffer, self._depth_buffer, self._stencil_buffer):
-            if hasattr(b, '_glir'):
-                b._associate_canvas(canvas)
-        self._associate_canvas(canvas)
+        if canvas is not None:
+            self._associate_canvas(canvas)
+            for b in (self.color_buffer, 
+                      self.depth_buffer, 
+                      self.stencil_buffer):
+                if hasattr(b, '_glir'):
+                    b._associate_canvas(canvas, first=True)
         # Send command
-        canvas.glir.command('FRAMEBUFFER', self._id, True)
+        self._glir.command('FRAMEBUFFER', self._id, True)
     
     def deactivate(self):
         """ Stop using this frame buffer, the previous framebuffer will be
