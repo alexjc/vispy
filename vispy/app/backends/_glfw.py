@@ -219,12 +219,12 @@ class CanvasBackend(BaseCanvasBackend):
         self._initialized = False
         
         # Deal with context
-        if not context.istaken:
-            context.take('glfw', self)
+        if not context.shared:
+            context.create_shared('glfw', self)
             _set_config(context.config)
             share = None
-        elif context.istaken == 'glfw':
-            share = context.backend_canvas._id
+        elif context.shared.name == 'glfw':
+            share = context.shared.ref._id
         else:
             raise RuntimeError('Different backends cannot share a context.')
         

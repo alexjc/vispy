@@ -238,8 +238,8 @@ class CanvasBackend(BaseCanvasBackend):
         self._initialized = False
         
         # Deal with context
-        if not context.istaken:
-            context.take('glut', self)
+        if not context.shared:
+            context.create_shared('glut', self)
             _set_config(context.config)
         else:
             raise RuntimeError('Glut cannot share contexts.')

@@ -47,9 +47,9 @@ class GLObject(object):
         of the canvas rather than the context.
         """
         if self._GLIR_TYPE in ('RenderBuffer', 'FrameBuffer'):
-            new_queue = canvas.glir
-        else:
             new_queue = canvas.context.glir
+        else:
+            new_queue = canvas.context.shared.glir
         new_queue.push(self._glir.clear(), first)
         self._glir = new_queue
         self._associate_canvas = lambda canvas=None, first=False: None

@@ -8,7 +8,6 @@ import numpy as np
 from copy import deepcopy
 
 from . import gl
-from .context import get_current_canvas
 from ..ext.six import string_types
 from ..color import Color
 
@@ -56,30 +55,11 @@ def _check_conversion(key, valid_dict):
     return valid_dict[key] if key in valid_dict else key
 
 
-class GlooFunctions(object):
+class BaseGlooFunctions(object):
     """ Class that provides a series of GL functions that do not fit
     in the object oriented part of gloo. An instance of this class is
     associated with each canvas.
     """
-    
-    def __init__(self, glir_queue=None):
-        self._glir = glir_queue
-    
-    @property
-    def glir(self):
-        """ The GLIR queue for these functions
-        
-        When this is an object on a canvas (`canvas.gloo`), this object
-        has the same queue as the canvas. The global_gloo_functions
-        object has its own queue, which gets dispatched into the queue
-        of the active canvas on Program.draw().
-        """
-        if self._glir is not None:
-            return self._glir
-        else:
-            canvas = get_current_canvas()
-            assert canvas is not None
-            return canvas.glir
     
     ##########################################################################
     # PRIMITIVE/VERTEX
@@ -563,6 +543,18 @@ class GlooFunctions(object):
         if not all(isinstance(tm, string_types) for tm in (target, mode)):
             raise TypeError('target and mode must both be strings')
         self.glir.command('FUNC', 'glHint', target, mode)
+
+
+class GlooFunctions(BaseGlooFunctions):
+    
+    @property
+    def glir(self):
+        """ The GLIR queue corresponding to the current canvas
+        """
+        from .context import get_current_canvas
+        canvas = get_current_canvas()
+        assert canvas is not None
+        return canvas.context.glir
 
 
 ## Create global functions object and inject names here

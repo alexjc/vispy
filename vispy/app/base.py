@@ -76,7 +76,7 @@ class BaseCanvasBackend(object):
         # Verify given argument with capability of the backend
         app = self._vispy_canvas.app
         capability = app.backend_module.capability
-        if kwargs['context'].istaken:
+        if kwargs['context'].shared:
             if not capability['context']:
                 raise RuntimeError('Cannot share context with this backend')
         for key in [key for (key, val) in capability.items() if not val]:

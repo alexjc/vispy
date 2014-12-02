@@ -157,11 +157,11 @@ class CanvasBackend(BaseCanvasBackend):
             = self._process_backend_kwargs(kwargs)
         
         # Deal with context
-        if not context.istaken:
-            context.take('backend-name', self)
+        if not context.shared:
+            context.create_shared('backend-name', self)
             self._native_context = None  # ...
-        elif context.istaken == 'backend-name':
-            self._native_context = context.backend_canvas._native_context
+        elif context.shared.name == 'backend-name':
+            self._native_context = context.ref._native_context
         else:
             raise RuntimeError('Different backends cannot share a context.')
         

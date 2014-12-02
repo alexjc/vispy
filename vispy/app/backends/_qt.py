@@ -435,13 +435,13 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
             atexit.register(egl.eglTerminate, _EGL_DISPLAY)
         
         # Deal with context
-        if not context.istaken:
-            context.take('qt-egl', self)
+        if not context.shared:
+            context.create_shared('qt-egl', self)
             self._native_config = c = egl.eglChooseConfig(_EGL_DISPLAY)[0]
             self._native_context = egl.eglCreateContext(_EGL_DISPLAY, c, None)
-        elif context.istaken == 'qt-egl':
-            self._native_config = context.backend_canvas._native_config
-            self._native_context = context.backend_canvas._native_context
+        elif context.shared.name == 'qt-egl':
+            self._native_config = context.shared.ref._native_config
+            self._native_context = context.shared.ref._native_context
         else:
             raise RuntimeError('Different backends cannot share a context.')
         
@@ -554,15 +554,15 @@ class CanvasBackendDesktop(QtBaseCanvasBackend, QGLWidget):
     def _init_specific(self, vsync, dec, fs, parent, context, kwargs):
         
         # Deal with context
-        if not context.istaken:
+        if not context.shared:
             widget = kwargs.pop('shareWidget', None) or self
-            context.take('qt', widget)
+            context.create_shared('qt', widget)
             glformat = _set_config(context.config)
             glformat.setSwapInterval(1 if vsync else 0)
             if widget is self:
                 widget = None  # QGLWidget does not accept self ;)
-        elif context.istaken == 'qt':
-            widget = context.backend_canvas
+        elif context.shared.name == 'qt':
+            widget = context.ref
             glformat = QGLFormat.defaultFormat()
             if 'shareWidget' in kwargs:
                 raise RuntimeError('Cannot use vispy to share context and '

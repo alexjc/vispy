@@ -412,15 +412,15 @@ class Program(GLObject):
                        np.dtype(np.uint16): 'UNSIGNED_SHORT',
                        np.dtype(np.uint32): 'UNSIGNED_INT'}
             selection = indices.id, gltypes[indices.dtype], indices.size
-            canvas.glir.command('DRAW', self._id, mode, selection)
+            canvas.context.glir.command('DRAW', self._id, mode, selection)
         elif indices is None:
             selection = 0, attributes[0].size
             logger.debug("Program drawing %r with %r" % (mode, selection))
-            canvas.glir.command('DRAW', self._id, mode, selection)
+            canvas.context.glir.command('DRAW', self._id, mode, selection)
         else:
             raise TypeError("Invalid index: %r (must be IndexBuffer)" %
                             indices)
         
         # Process GLIR commands
+        canvas.context.shared.glir.flush()
         canvas.context.glir.flush()
-        canvas.glir.flush()

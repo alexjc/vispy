@@ -206,13 +206,13 @@ class CanvasBackend(Frame, BaseCanvasBackend):
             = self._process_backend_kwargs(kwargs)
         
         # Deal with context 
-        if not context.istaken:
-            context.take('wx', self)
+        if not context.shared:
+            context.create_shared('wx', self)
             self._gl_attribs = _set_config(context.config)
             self._gl_context = None  # set for real once we know self._canvas
-        elif context.istaken == 'wx':
-            self._gl_attribs = context.backend_canvas._gl_attribs
-            self._gl_context = context.backend_canvas._gl_context
+        elif context.shared.name == 'wx':
+            self._gl_attribs = context.ref._gl_attribs
+            self._gl_context = context.ref._gl_context
         else:
             raise RuntimeError('Different backends cannot share a context.')
         

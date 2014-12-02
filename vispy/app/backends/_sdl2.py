@@ -202,12 +202,12 @@ class CanvasBackend(BaseCanvasBackend):
         self._initialized = False
         
         # Deal with context
-        if not context.istaken:
-            context.take('sdl2', self)
+        if not context.shared:
+            context.create_shared('sdl2', self)
             _set_config(context.config)
             share = None
-        elif context.istaken == 'sdl2':
-            other = context.backend_canvas
+        elif context.shared.name == 'sdl2':
+            other = context.ref
             share = other._id.window, other._native_context
             sdl2.SDL_GL_MakeCurrent(*share)
             sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1)

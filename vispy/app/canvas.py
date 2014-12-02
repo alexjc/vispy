@@ -61,13 +61,13 @@ class Canvas(object):
     fullscreen : bool | int
         If False, windowed mode is used (default). If True, the default
         monitor is used. If int, the given monitor number is used.
-    context : dict | instance GLContext | None
-        OpenGL configuration to use when creating the context for the canvas,
-        or a context to share. If None, ``vispy.gloo.get_default_config`` will
-        be used to set the OpenGL context parameters. Alternatively, the
-        ``canvas.context`` property from an existing canvas (using the
-        same backend) will return a ``GLContext`` that can be used,
-        thereby sharing the existing context.
+    context : dict | GLContext | None
+        OpenGL configuration to use when creating the context for the
+        canvas, or a context to share objects with. If None,
+        ``vispy.gloo.get_default_config`` will be used to set the OpenGL
+        context parameters. Alternatively, the ``canvas.context``
+        property from an existing canvas (using the same backend) can
+        be used, thereby sharing objects between contexts.
     keys : str | dict | None
         Default key mapping to use. If 'interactive', escape and F11 will
         close the canvas and toggle full-screen mode, respectively.
@@ -147,17 +147,15 @@ class Canvas(object):
         # Ensure context is a GLContext object
         context = context or {}
         if isinstance(context, dict):
-            gl_config, context = context, GLContext()
-            context.set_config(gl_config)  # GLContext checks the dict keys
-        elif not isinstance(context, GLContext):
+            context = GLContext(context)
+        elif isinstance(context, GLContext):
+            shared = context.shared
+            context = GLContext()
+            context.create_shared(shared.name, shared.ref)
+        else:
             raise TypeError('context must be a dict or GLContext from '
                             'a Canvas with the same backend, not %s'
                             % type(context))
-        
-        # Get the glir queue (with shared parser) and make this canvas active
-        self._glir = GlirQueue(parser=context.glir.parser)
-        self._gloo = GlooFunctions(self._glir)
-        set_current_canvas(self)
         
         # Deal with special keys
         self._set_keys(keys)
@@ -190,10 +188,13 @@ class Canvas(object):
 
         # Connect to draw event (append to the end)
         # Process GLIR commands at each paint event
-        self.events.draw.connect(self.glir.flush, position='last')
+        self.events.draw.connect(self.context.glir.flush, position='last')
         if self._autoswap:
             self.events.draw.connect((self, 'swap_buffers'),
                                      ref=True, position='last')
+        # Link parser and make current
+        self.context.glir.parser = self.context.shared.glir.parser
+        set_current_canvas(self)
 
     def _set_keys(self, keys):
         if keys is not None:
@@ -235,23 +236,11 @@ class Canvas(object):
     @property
     def context(self):
         """ The OpenGL context of the native widget
+        
+        It gives access to OpenGL functions to call on this canvas object,
+        and to the shared context namespace.
         """
         return self._backend._vispy_context
-    
-    @property
-    def glir(self):
-        """ The GLIR queue for this canvas. This queue stores all GLIR
-        commands that do not apply to shared objects, such as function
-        calls and things related to framebuffers. Shared state is handled
-        via the queue at canvas.context.glir.
-        """
-        return self._glir
-    
-    @property
-    def gloo(self):
-        """ The gloo functions applicable to this canvas.
-        """
-        return self._gloo
     
     @property
     def app(self):
