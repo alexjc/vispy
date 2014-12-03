@@ -136,8 +136,8 @@ class CanvasBackend(BaseCanvasBackend):
                                                         self._native_config, 
                                                         None)
         else:
-            self._native_config = contex.shared.ref._native_config
-            self._native_context = contex.shared.ref._native_context
+            self._native_config = context.shared.ref._native_config
+            self._native_context = context.shared.ref._native_context
         
         self._surface = None
         self._vispy_set_size(*size)

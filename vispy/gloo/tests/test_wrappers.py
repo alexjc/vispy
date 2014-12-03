@@ -11,7 +11,7 @@ from vispy import gloo
 from vispy.gloo import gl
 from vispy.app import Canvas
 from vispy.testing import requires_application, run_tests_if_main
-from vispy.gloo import read_pixels, global_gloo_functions
+from vispy.gloo import read_pixels
 from vispy.gloo.glir import GlirQueue
 from vispy.gloo import wrappers
 
@@ -20,6 +20,7 @@ from vispy.gloo import wrappers
 dummy_glir = GlirQueue()
 dummy_glir.context = dummy_glir
 dummy_glir.glir = dummy_glir
+
 
 def install_dummy_glir():
     wrappers.get_current_canvas = lambda x=None: dummy_glir

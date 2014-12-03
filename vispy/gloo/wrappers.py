@@ -39,6 +39,7 @@ def get_current_canvas():
     globals()['get_current_canvas'] = get_current_canvas
     return get_current_canvas()
     
+
 # Helpers that are needed for efficient wrapping
 
 def _check_valid(key, val, valid):
