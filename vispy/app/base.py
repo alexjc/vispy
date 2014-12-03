@@ -69,10 +69,7 @@ class BaseCanvasBackend(object):
         Also checks whether the values of the backend arguments do not
         violate the backend capabilities.
         """
-
-        # Store context here
-        self._vispy_context = kwargs['context']
-
+        
         # Verify given argument with capability of the backend
         app = self._vispy_canvas.app
         capability = app.backend_module.capability

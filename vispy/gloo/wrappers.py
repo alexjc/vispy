@@ -30,6 +30,15 @@ _setters = [s[4:] for s in __all__
             if s.startswith('set_') and s != 'set_state']
 
 
+def get_current_canvas():
+    """ Proxy for context.get_current_canvas to avoud circular import.
+    This function replaces itself with the real function the first 
+    time it is called. (Bah)
+    """
+    from .context import get_current_canvas
+    globals()['get_current_canvas'] = get_current_canvas
+    return get_current_canvas()
+    
 # Helpers that are needed for efficient wrapping
 
 def _check_valid(key, val, valid):
@@ -551,7 +560,6 @@ class GlooFunctions(BaseGlooFunctions):
     def glir(self):
         """ The GLIR queue corresponding to the current canvas
         """
-        from .context import get_current_canvas
         canvas = get_current_canvas()
         assert canvas is not None
         return canvas.context.glir

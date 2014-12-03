@@ -237,10 +237,12 @@ class CanvasBackend(BaseCanvasBackend):
             = self._process_backend_kwargs(kwargs)
         self._initialized = False
         
+        # Deal with config
+        _set_config(context.config)
         # Deal with context
-        if not context.shared:
-            context.create_shared('glut', self)
-            _set_config(context.config)
+        context.shared.add_ref('glut', self)
+        if context.shared.ref is not self:
+            pass  # ok
         else:
             raise RuntimeError('Glut cannot share contexts.')
         

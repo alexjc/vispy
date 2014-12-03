@@ -144,18 +144,19 @@ class Canvas(object):
         else:
             raise ValueError('Invalid value for app %r' % app)
         
-        # Ensure context is a GLContext object
+        # Create new context
         context = context or {}
         if isinstance(context, dict):
-            context = GLContext(context)
+            self._context = GLContext(context)
         elif isinstance(context, GLContext):
-            shared = context.shared
-            context = GLContext()
-            context.create_shared(shared.name, shared.ref)
+            self._context = GLContext(context.config, context.shared)
         else:
             raise TypeError('context must be a dict or GLContext from '
                             'a Canvas with the same backend, not %s'
                             % type(context))
+        
+        # Now we're ready to become current
+        set_current_canvas(self)
         
         # Deal with special keys
         self._set_keys(keys)
@@ -163,7 +164,8 @@ class Canvas(object):
         # store arguments that get set on Canvas init
         kwargs = dict(title=title, size=size, position=position, show=show,
                       vsync=vsync, resizable=resizable, decorate=decorate,
-                      fullscreen=fullscreen, context=context, parent=parent)
+                      fullscreen=fullscreen, context=self._context, 
+                      parent=parent)
         self._backend_kwargs = kwargs
 
         # Create widget now (always do this *last*, after all err checks)
@@ -192,9 +194,6 @@ class Canvas(object):
         if self._autoswap:
             self.events.draw.connect((self, 'swap_buffers'),
                                      ref=True, position='last')
-        # Link parser and make current
-        self.context.glir.parser = self.context.shared.glir.parser
-        set_current_canvas(self)
 
     def _set_keys(self, keys):
         if keys is not None:
@@ -240,7 +239,7 @@ class Canvas(object):
         It gives access to OpenGL functions to call on this canvas object,
         and to the shared context namespace.
         """
-        return self._backend._vispy_context
+        return self._context
     
     @property
     def app(self):

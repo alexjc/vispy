@@ -121,14 +121,13 @@ class CanvasBackend(BaseCanvasBackend):
             = self._process_backend_kwargs(kwargs)
         self._context = context
 
+        # TODO: do something with context.config
         # Take the context.
-        if not context.shared:
-            context.create_shared('webgl', self)
-            # TODO: do something with context.config
-        elif context.shared.name == 'webgl':
-            raise RuntimeError("WebGL doesn't yet support context sharing.")
+        context.shared.add_ref('webgl', self)
+        if context.shared.ref is self:
+            pass  # ok
         else:
-            raise RuntimeError('Different backends cannot share a context.')
+            raise RuntimeError("WebGL doesn't yet support context sharing.")
         
         self._create_widget(size=size)
 

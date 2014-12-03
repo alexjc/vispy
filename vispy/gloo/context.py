@@ -88,10 +88,12 @@ class GLContext(BaseGlooFunctions):
     """An object encapsulating data necessary for a OpenGL context.
     """
     
-    def __init__(self, config=None):
+    def __init__(self, config=None, shared=None):
         self._set_config(config)
-        self._shared = None  # Set by the app backend
-        self._glir = GlirQueue()
+        self._shared = shared if (shared is not None) else GLShared()
+        assert isinstance(self._shared, GLShared)
+        # This object has a unique glir queue, but shares the parser 
+        self._glir = GlirQueue(self.shared.glir.parser)
     
     def __repr__(self):
         return "<GLContext at 0x%x>" % id(self)
@@ -136,21 +138,26 @@ class GLContext(BaseGlooFunctions):
 
 class GLShared(object):
     """ Representation of a "namespace" that can be shared between
-    different contexts. Instances of this class are created by the
-    canvas backends.
+    different contexts. App backends can associate themselves with this
+    object via add_ref().
     
     This object can be used to establish whether two contexts/canvases
     share objects, and can be used as a placeholder to store shared
     information, such as glyph atlasses.
     """
     
-    def __init__(self, name, ref):
-        self._name = name
-        self._ref = weakref.ref(ref)
+    # We keep a (weak) ref of each backend that gets associated with
+    # this object. In theory, this means that multiple canvases can
+    # be created and also deleted; as long as there is at least one
+    # left, things should Just Work. 
+    
+    def __init__(self):
         self._glir = GlirQueue(GlirParser())  # The context holds *the* parser
+        self._name = None
+        self._refs = []
     
     def __repr__(self):
-        return "<GLShared of %s backend at 0x%x>" % (self.name, id(self))
+        return "<GLShared of %s backend at 0x%x>" % (str(self.name), id(self))
     
     @property
     def glir(self):
@@ -159,10 +166,23 @@ class GLShared(object):
         """
         return self._glir
     
+    def add_ref(self, name, ref):
+        """ Add a reference for the backend object that gives access
+        to the low level context. Used in vispy.app.canvas.backends.
+        The given name must match with that of previously added
+        references.
+        """
+        if self._name is None:
+            self._name = name
+        elif name != self._name:
+            raise RuntimeError('Contexts can only share between backends of '
+                               'the same type')
+        self._refs.append(weakref.ref(ref))
+    
     @property
     def name(self):
         """ The name of the canvas backend that this shared namespace is
-        associated with.
+        associated with. Can be None.
         """
         return self._name
     
@@ -173,8 +193,11 @@ class GLShared(object):
         information of the "reference context". In Vispy this will
         typically be the CanvasBackend object.
         """
-        ref = self._ref()
+        # Clean
+        self._refs = [r for r in self._refs if (r() is not None)]
+        # Get ref
+        ref = self._refs[0]() if self._refs else None
         if ref is not None:
             return ref
         else:
-            raise RuntimeError('The reference is not available')
+            raise RuntimeError('No reference for available for GLShared')
