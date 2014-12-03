@@ -13,18 +13,32 @@ from vispy.app import Canvas
 from vispy.testing import requires_application, run_tests_if_main
 from vispy.gloo import read_pixels, global_gloo_functions
 from vispy.gloo.glir import GlirQueue
+from vispy.gloo import wrappers
+
+
+# Dummy queue
+dummy_glir = GlirQueue()
+dummy_glir.context = dummy_glir
+dummy_glir.glir = dummy_glir
+
+def install_dummy_glir():
+    wrappers.get_current_canvas = lambda x=None: dummy_glir
+    dummy_glir.clear()
+    return dummy_glir
+
+
+def reset_glir():
+    wrappers.get_current_canvas = gloo.get_current_canvas
 
 
 def teardown_module():
-    global_gloo_functions._glir = None
+    reset_glir()
 
-    
+
 def test_wrappers_basic_glir():
     """ Test that basic gloo wrapper functions emit right GLIR command """
     
-    # Install dummy queue
-    glir = GlirQueue()
-    global_gloo_functions._glir = glir
+    glir = install_dummy_glir()
     
     funcs = [('viewport', 0, 0, 10, 10),
              ('depth_range', 0, 1),
@@ -66,14 +80,14 @@ def test_wrappers_basic_glir():
             assert cmd[1][:-8] == name
         else:
             assert cmd[1] == name
+    
+    reset_glir()
 
 
 def test_wrappers_glir():
     """ Test that special wrapper functions do what they must do """
 
-    # Install dummy queue
-    glir = GlirQueue()
-    global_gloo_functions._glir = glir
+    glir = install_dummy_glir()
     
     # Test clear() function
     gloo.clear()
@@ -123,6 +137,8 @@ def test_wrappers_glir():
     gloo.set_state(a_preset)
     cmds = sorted(glir.clear())
     assert len(cmds) == len(presets[a_preset])
+    
+    reset_glir()
 
 
 def assert_cmd_raises(E, fun, *args, **kwargs):

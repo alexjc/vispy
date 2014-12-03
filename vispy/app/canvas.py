@@ -426,9 +426,8 @@ class Canvas(object):
     def __exit__(self, type, value, traceback):
         # ensure all GL calls are complete
         if not self._closed:
-            from .. import gloo
             self._backend._vispy_set_current()
-            gloo.finish()
+            self.context.finish()
             self.close()
         sleep(0.1)  # ensure window is really closed/destroyed
 

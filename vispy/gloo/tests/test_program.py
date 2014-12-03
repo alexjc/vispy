@@ -21,6 +21,10 @@ class DummyCanvas:
     @property
     def context(self):
         return self
+    
+    @property
+    def shared(self):
+        return self
 
 
 class ProgramTest(unittest.TestCase):

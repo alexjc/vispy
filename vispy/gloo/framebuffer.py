@@ -126,12 +126,11 @@ class FrameBuffer(GLObject):
         # Associate canvas now
         canvas = get_current_canvas()
         if canvas is not None:
-            self._associate_canvas(canvas)
-            for b in (self.color_buffer, 
-                      self.depth_buffer, 
-                      self.stencil_buffer):
+            self._associate_context(canvas.context)
+        if self.context is not None:
+            for b in self.color_buffer, self.depth_buffer, self.stencil_buffer:
                 if hasattr(b, '_glir'):
-                    b._associate_canvas(canvas, first=True)
+                    b._associate_context(self.context, first=True)
         # Send command
         self._glir.command('FRAMEBUFFER', self._id, True)
     
@@ -165,6 +164,9 @@ class FrameBuffer(GLObject):
         elif isinstance(buffer, (Texture2D, RenderBuffer)):
             setattr(self, '_%s_buffer' % format, buffer)
             self._glir.command('ATTACH', self._id, format, buffer.id)
+            # Try to associate buffer via our context 
+            if self.context is not None:
+                    buffer._associate_context(self.context, first=True)
         else:
             raise TypeError("Buffer must be a RenderBuffer, Texture2D or None."
                             " (got %s)" % type(buffer))

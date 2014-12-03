@@ -398,15 +398,18 @@ class Program(GLObject):
         canvas = get_current_canvas()
         assert canvas is not None
         
-        # Associate canvas
-        self._associate_canvas(canvas)
+        # Associate canvas and chech that the program can be used
+        self._associate_context(canvas.context)
+        assert self._glir is canvas.context.shared.glir
+        
+        # Associate canvas with all the other objects
         for ob in self._user_variables.values():
             if isinstance(ob, GLObject):
-                ob._associate_canvas(canvas, first=True)
+                ob._associate_context(canvas.context, first=True)
         
         # Indexbuffer
         if isinstance(indices, IndexBuffer):
-            indices._associate_canvas(canvas)
+            indices._associate_context(canvas.context)
             logger.debug("Program drawing %r with index buffer" % mode)
             gltypes = {np.dtype(np.uint8): 'UNSIGNED_BYTE',
                        np.dtype(np.uint16): 'UNSIGNED_SHORT',

@@ -356,9 +356,9 @@ class DataBufferView(DataBuffer):
         self._dtype = base.dtype
         self._nbytes = self.size * self.itemsize
     
-    def _associate_canvas(self, *args, **kwargs):
-        self.base._associate_canvas(*args, **kwargs)
-        self._associate_canvas = lambda *args, **kwargs: None
+    def _associate_context(self, *args, **kwargs):
+        self.base._associate_context(*args, **kwargs)
+        self._associate_context = lambda *args, **kwargs: None
     
     @property
     def id(self):

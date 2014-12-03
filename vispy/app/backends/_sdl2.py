@@ -204,7 +204,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Deak with config
         _set_config(context.config)
         # Deal with context
-        context.shared.add_ref('sdl', self)
+        context.shared.add_ref('sdl2', self)
         if context.shared.ref is self:
             share = None
         else:

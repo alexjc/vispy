@@ -610,7 +610,7 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
         of the framebuffer at index [0, 0] in the returned array.
     """
     # Check whether the GL context is direct or remote
-    glir = get_current_canvas().glir
+    glir = get_current_canvas().context.glir
     if glir.is_remote():
         raise RuntimeError('Cannot use read_pixels() with remote GLIR parser')
     

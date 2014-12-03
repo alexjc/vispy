@@ -133,8 +133,10 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _create_widget(self, size=None):
         self._widget = VispyWidget(self._gen_event, size=size)
-        shared = self._vispy_canvas.context.shared
-        shared.parser = WebGLGlirParser(self._widget)
+        # Set glir parser on context and context.shared
+        context = self._vispy_canvas.context
+        context.shared.glir.parser = WebGLGlirParser(self._widget)
+        context.glir.parser = context.shared.glir.parser
 
     def _reinit_widget(self):
         self._vispy_canvas.set_current()

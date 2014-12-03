@@ -32,8 +32,8 @@ def test_use_framebuffer():
         fbo_tex = Texture2D(use_shape, format='rgb')
         rbo = RenderBuffer(shape, 'color')
         fbo = FrameBuffer(color=fbo_tex)
-        c.glir.set_verbose(True)
         c.context.glir.set_verbose(True)
+        c.context.shared.glir.set_verbose(True)
         assert_equal(c.size, shape[::-1])
         set_viewport((0, 0) + c.size)
         with fbo:
