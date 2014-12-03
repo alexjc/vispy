@@ -52,12 +52,12 @@ def test_context_sharing():
         vert = "attribute vec4 pos;\nvoid main (void) {gl_Position = pos;}"
         frag = "attribute vec4 pos;\nvoid main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
-        program['pos'] = [1, 2, 3, 4]
+        program['pos'] = [(1, 2, 3, 1), (4, 5, 6, 1)]
         program.draw('points')
 
         def check():
             # Do something to program and see if it worked
-            program['pos'] = [1, 2, 3, 4]  # Do command
+            program['pos'] = [(1, 2, 3, 1), (4, 5, 6, 1)]  # Do command
             program.draw('points')
             check_error()
         

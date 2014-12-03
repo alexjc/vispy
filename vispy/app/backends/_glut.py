@@ -241,7 +241,7 @@ class CanvasBackend(BaseCanvasBackend):
         _set_config(context.config)
         # Deal with context
         context.shared.add_ref('glut', self)
-        if context.shared.ref is not self:
+        if context.shared.ref is self:
             pass  # ok
         else:
             raise RuntimeError('Glut cannot share contexts.')
