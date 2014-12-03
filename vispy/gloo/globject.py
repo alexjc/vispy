@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 
 
-from .glir import GlirQueue
+from .glir import ProxyGlirQueue
 
 
 class GLObject(object):
@@ -31,29 +31,16 @@ class GLObject(object):
         
         # Create our temporary GLIR queue in which commands can be queued
         # until we get associated with a canvas and get our final queue.
-        self._context = None
-        self._glir = GlirQueue()
+        self._glir = ProxyGlirQueue()
         #print(self._GLIR_TYPE, 'takes', self._context)
         
         # Give glir command to create GL representation of this object
         self._glir.command('CREATE', self._id, self._GLIR_TYPE)
     
-    def _associate_context(self, context, first=False):
-        """ This method is used to swap the temporary queue with the
-        final queue of the context or context.shared. This method is
-        called in Program.draw() and FrameBuffer.activate(): these are
-        the moments that gloo objects get associated. This method
-        replaces itself with a dummy function: all calls but the first
-        should just return asap.
+    def _assign_glir_queue(self, glir_queue):
+        """ To assign a destination queue for our proxy.
         """
-        self._context = context
-        if self._GLIR_TYPE in ('RenderBuffer', 'FrameBuffer'):
-            new_queue = context.glir
-        else:
-            new_queue = context.shared.glir
-        new_queue.push(self._glir.clear(), first)
-        self._glir = new_queue
-        self._associate_context = lambda canvas=None, first=False: None
+        self._glir.assign(glir_queue)
     
     def __del__(self):
         # You never know when this is goint to happen. The window might
@@ -77,10 +64,3 @@ class GLObject(object):
         in GLIR. id's are unique within a process.
         """
         return self._id
-    
-    @property
-    def context(self):
-        """ The context that this object is associated with. Can be None
-        if not yet associated.
-        """
-        return self._context

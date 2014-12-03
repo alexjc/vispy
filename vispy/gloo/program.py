@@ -285,6 +285,7 @@ class Program(GLObject):
                         assert False  # This should not happen
                     # Store and send GLIR command
                     self._user_variables[name] = data
+                    data._assign_glir_queue(self._glir)
                     self._glir.command('TEXTURE', self._id, name, data.id)
                 else:
                     # Normal uniform; convert to np array and check size
@@ -319,6 +320,7 @@ class Program(GLObject):
                     # Store and send GLIR command
                     self._user_variables[name] = data
                     value = (data.id, data.stride, data.offset)
+                    data._assign_glir_queue(self._glir)
                     self._glir.command('ATTRIBUTE', self._id,
                                        name, type, value)
                 else:
@@ -399,17 +401,11 @@ class Program(GLObject):
         assert canvas is not None
         
         # Associate canvas and chech that the program can be used
-        self._associate_context(canvas.context)
-        assert self._glir is canvas.context.shared.glir
-        
-        # Associate canvas with all the other objects
-        for ob in self._user_variables.values():
-            if isinstance(ob, GLObject):
-                ob._associate_context(canvas.context, first=True)
+        self._assign_glir_queue(canvas.context.glir)
         
         # Indexbuffer
         if isinstance(indices, IndexBuffer):
-            indices._associate_context(canvas.context)
+            indices._assign_glir_queue(canvas.context.glir)
             logger.debug("Program drawing %r with index buffer" % mode)
             gltypes = {np.dtype(np.uint8): 'UNSIGNED_BYTE',
                        np.dtype(np.uint16): 'UNSIGNED_SHORT',

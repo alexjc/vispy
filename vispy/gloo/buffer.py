@@ -356,9 +356,8 @@ class DataBufferView(DataBuffer):
         self._dtype = base.dtype
         self._nbytes = self.size * self.itemsize
     
-    def _associate_context(self, *args, **kwargs):
-        self.base._associate_context(*args, **kwargs)
-        self._associate_context = lambda *args, **kwargs: None
+    def _assign_glir_queue(self, *args, **kwargs):
+        self.base._assign_glir_queue(*args, **kwargs)
     
     @property
     def id(self):

@@ -238,7 +238,8 @@ def test_application():
         vert = "void main (void) {gl_Position = pos;}"
         frag = "void main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
-        assert_raises(RuntimeError, program._glir.flush)
+        program._assign_glir_queue(canvas.context.shared.glir)
+        assert_raises(RuntimeError, canvas.context.shared.glir.flush)
         
         vert = "uniform vec4 pos;\nvoid main (void) {gl_Position = pos;}"
         frag = "uniform vec4 pos;\nvoid main (void) {gl_FragColor = pos;}"
@@ -283,7 +284,8 @@ def test_application():
         # bad programs
         frag_bad = ("varying vec4 v_colors")  # no semicolon
         program = Program(vert, frag_bad)
-        assert_raises(RuntimeError, program._glir.flush)
+        program._assign_glir_queue(canvas.context.shared.glir)
+        assert_raises(RuntimeError, canvas.context.shared.glir.flush)
         frag_bad = None  # no fragment code. no main is not always enough
         assert_raises(ValueError, Program, vert, frag_bad)
 

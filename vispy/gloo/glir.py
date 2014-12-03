@@ -29,7 +29,86 @@ def as_enum(enum):
     return enum
 
 
-class GlirQueue(object):
+class BaseGlirQueue(object):
+    """ Abstract base GLIR queue class.
+    """
+    
+    def __init__(self):
+        self._commands = []  # local commands
+        self._destination = None
+        self._verbose = False
+    
+    def command(self, *args):
+        """ Send a command. See the command spec at:
+        https://github.com/vispy/vispy/wiki/Spec.-Gloo-IR
+        """
+        if self._destination is not None:
+            self._destination.command(*args)
+        else:
+            self._commands.append(args)
+    
+    def set_verbose(self, verbose):
+        """ Set verbose or not. If True, the GLIR commands are printed
+        right before they get parsed.
+        """
+        self._verbose = verbose
+    
+    def show(self):
+        """ Print the list of commands currently in the queue.
+        """
+        if self._destination is not None:
+            return self._destination.show()
+        
+        for command in self._commands:
+            if command[0] is None:  # or command[1] in self._invalid_objects:
+                continue  # Skip nill commands 
+            t = []
+            for e in command:
+                if isinstance(e, np.ndarray):
+                    t.append('array %s' % str(e.shape))
+                elif isinstance(e, str):
+                    s = e.strip()
+                    if len(s) > 20:
+                        s = s[:18] + '... %i lines' % (e.count('\n')+1)
+                    t.append(s)
+                else:
+                    t.append(e)
+            print(tuple(t))
+    
+    def clear(self):
+        """ Pop the whole queue and return it as a list.
+        """
+        if self._destination is not None:
+            return self._destination.clear()
+        
+        self._commands, ret = [], self._commands
+        return ret
+
+
+class ProxyGlirQueue(BaseGlirQueue):
+    """ The proxy glir queue is used on objects to allow the generation
+    of GLIR commands without the presense of a context. The proxy
+    can be assigned to another GLIR queue (which can again be a proxy),
+    so that future commands end up in *that* glir queue instead.
+    """
+    
+    def assign(self, destination):
+        """ Assign the given glir queue as the destination for this
+        proxy queue.
+        """
+        if destination is self:
+            return  # This does not happen in practice, but it does in tests
+        assert isinstance(destination, BaseGlirQueue)
+        # Assign and transfer verbose
+        self._destination = destination
+        destination._verbose = destination._verbose or self._verbose
+        # Transfer commands
+        for args in self._commands:
+            destination.command(*args)
+        self._commands[:] = []
+
+
+class GlirQueue(BaseGlirQueue):
     """ Representation of a queue of GLIR commands. One instance of
     this class is attached to each context object, and gloo will post
     commands to this queue.
@@ -42,9 +121,7 @@ class GlirQueue(object):
     """
     
     def __init__(self, parser=None):
-        self._commands = []
-        self._invalid_objects = set()
-        self._verbose = False
+        BaseGlirQueue.__init__(self)
         self.parser = parser
 
     @property
@@ -64,53 +141,6 @@ class GlirQueue(object):
         if self._parser is None:
             raise RuntimeError('Cannot determine is_remote if parser is None')
         return self._parser.is_remote()
-    
-    def set_verbose(self, vebose):
-        """ Set verbose or not. If True, the GLIR commands are printed
-        right before they get parsed.
-        """
-        self._verbose = True
-    
-    def command(self, *args):
-        """ Send a command. See the command spec at:
-        https://github.com/vispy/vispy/wiki/Spec.-Gloo-IR
-        """
-        self._commands.append(args)
-        if args[0] == 'CREATE' and args[-1] is None:
-            self._invalid_objects.add(args[1])
-    
-    def show(self):
-        """ Print the list of commands currently in the queue.
-        """
-        for command in self._commands:
-            if command[0] is None or command[1] in self._invalid_objects:
-                continue  # Skip nill commands 
-            t = []
-            for e in command:
-                if isinstance(e, np.ndarray):
-                    t.append('array %s' % str(e.shape))
-                elif isinstance(e, str):
-                    s = e.strip()
-                    if len(s) > 20:
-                        s = s[:18] + '... %i lines' % (e.count('\n')+1)
-                    t.append(s)
-                else:
-                    t.append(e)
-            print(tuple(t))
-    
-    def clear(self):
-        """ Pop the whole queue and return it as a list.
-        """
-        self._commands, ret = [], self._commands
-        return ret
-    
-    def push(self, commands, first=False):
-        """ Add a list of commands to the queue.
-        """
-        if first:
-            self._commands = commands + self._commands
-        else:
-            self._commands.extend(commands)
     
     def flush(self, event=False):
         """ Flush all current commands to the GLIR interpreter.
@@ -295,8 +325,8 @@ class GlirParser(BaseGlirParser):
                 ob = self._objects.get(id, None)
                 if ob is None:
                     if id not in self._invalid_objects:
-                        logger.warning('Cannot %s object %i because it does '
-                                       'not exist' % (cmd, id))
+                        raise RuntimeError('Cannot %s object %i because it '
+                                           'does not exist' % (cmd, id))
                     continue
                 # Triage over command. Order of commands is set so most
                 # common ones occur first.

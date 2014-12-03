@@ -15,8 +15,9 @@ from vispy.gloo.context import set_current_canvas, forget_canvas
 
 class DummyCanvas:
     
-    def __init__(self, glir):
-        self.glir = glir
+    def __init__(self):
+        self.glir = gloo.glir.GlirQueue()
+        self.glir.flush = lambda *args: None
     
     @property
     def context(self):
@@ -208,11 +209,7 @@ class ProgramTest(unittest.TestCase):
         program = Program("attribute float A;", "uniform float foo")
         program['A'] = np.zeros((10,), np.float32)
         
-        # We need to disable flushing to run this test
-        flush = program._glir.flush
-        program._glir.flush = lambda x=None: None
-        
-        dummy_canvas = DummyCanvas(program._glir)
+        dummy_canvas = DummyCanvas()
         set_current_canvas(dummy_canvas)
         try:
             # Draw arrays
@@ -243,6 +240,5 @@ class ProgramTest(unittest.TestCase):
         
         finally:
             forget_canvas(dummy_canvas)
-            program._glir.flush = flush
 
 run_tests_if_main()
