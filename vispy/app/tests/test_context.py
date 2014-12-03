@@ -50,7 +50,7 @@ def test_context_sharing():
     """Test context sharing"""
     with Canvas() as c1:
         vert = "attribute vec4 pos;\nvoid main (void) {gl_Position = pos;}"
-        frag = "attribute vec4 pos;\nvoid main (void) {gl_FragColor = pos;}"
+        frag = "void main (void) {gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);}"
         program = Program(vert, frag)
         program['pos'] = [(1, 2, 3, 1), (4, 5, 6, 1)]
         program.draw('points')
