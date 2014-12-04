@@ -422,5 +422,3 @@ class Program(GLObject):
         
         # Process GLIR commands
         canvas.context.flush_commands()
-#         canvas.context.shared.glir.flush()
-#         canvas.context.glir.flush()

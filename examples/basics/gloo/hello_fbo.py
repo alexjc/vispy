@@ -77,7 +77,7 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive')
         self.size = 560, 420
-        
+
         # Create texture to render to
         shape = self.size[1], self.size[0]
         self._rendertex = gloo.Texture2D((shape + (3,)))

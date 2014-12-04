@@ -163,7 +163,7 @@ class CanvasBackend(BaseCanvasBackend):
         if context.shared.ref is self:
             self._native_context = None  # ...
         else:
-            self._native_context = context.ref._native_context
+            self._native_context = context.shared.ref._native_context
         
         # NativeWidgetClass.__init__(self, foo, bar)
     

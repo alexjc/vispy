@@ -31,14 +31,22 @@ def as_enum(enum):
 
 
 class GlirQueue(object):
-    """ Abstract base GLIR queue class.
+    """ Representation of a queue of GLIR commands
+    
+    One instance of this class is attached to each context object, and
+    to each gloo object.
+    
+    Upon drawing (i.e. `Program.draw()`) and framebuffer switching, the
+    commands in the queue are pushed to a parser, which is stored at
+    context.shared. The parser can interpret the commands in Python,
+    send them to a browser, etc.
     """
     
     def __init__(self):
         self._commands = []  # local commands
         self._verbose = False
         self._associations = set()
-        self._zombie_count = 0  # to determine when to shoot zombies
+        self._count_for_cleanup = 0  # to determine when to shoot zombies
     
     def command(self, *args):
         """ Send a command. See the command spec at:
@@ -80,10 +88,10 @@ class GlirQueue(object):
         list of commands.
         """
         # Clean unusused associations?
-        self._zombie_count += 1
-        if self._zombie_count > 50:
-            self._zombie_count = 0
-            self._clean_zombie_associations()
+        self._count_for_cleanup += 1
+        if self._count_for_cleanup > 50:
+            self._count_for_cleanup = 0
+            self._clear_inactive_associations()
         
         # Get all commands
         commands = []
@@ -103,7 +111,7 @@ class GlirQueue(object):
         assert isinstance(queue, GlirQueue)
         self._associations.add(queue)
     
-    def _clean_zombie_associations(self):
+    def _clear_inactive_associations(self):
         """ Gid rid of glir queues that are no longer used.
         """
         L = [weakref.ref(q) for q in self._associations]

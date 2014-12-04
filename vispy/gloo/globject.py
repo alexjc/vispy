@@ -4,6 +4,39 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
+"""
+Base gloo object
+"""
+
+"""
+On queues
+---------
+
+The queue on the GLObject can be associated with other queues. These
+can be queues of other gloo objects, or of the canvas.context. A program
+associates the textures/buffers when they are set via __setitem__. A
+FrameBuffer does so when assigning buffers. A program associates itself
+with the canvas.context in draw(). A FrameBuffer does the same in
+activate().
+
+Example:
+
+    prog1, prog2 = Program(), Program()
+    tex1, tex2 = Texture(), Texture()
+
+    prog1.glir.associate(tex1.glir)
+    prog1.glir.associate(tex2.glir)
+
+    canvas1.context.glir.associate(prog1.glir)
+    canvas1.context.glir.associate(prog2.glir)
+    canvas2.context.glir.associate(prog2.glir)
+
+Now, when canvas1 flushes its queue, it takes all the pending commands
+from prog1 and prog2, and subsequently from tex1 and tex2. When canvas2
+is flushed, only commands from prog2 get taken. A similar situation
+holds for a texture that is associated with a program and a frame
+buffer.
+"""
 
 from .glir import GlirQueue
 
@@ -29,10 +62,9 @@ class GLObject(object):
         GLObject._idcount += 1
         self._id = GLObject._idcount
         
-        # Create our temporary GLIR queue in which commands can be queued
-        # until we get associated with a canvas and get our final queue.
+        # Create the GLIR queue in which we queue our commands. 
+        # See docs above for details.
         self._glir = GlirQueue()
-        #print(self._GLIR_TYPE, 'takes', self._context)
         
         # Give glir command to create GL representation of this object
         self._glir.command('CREATE', self._id, self._GLIR_TYPE)

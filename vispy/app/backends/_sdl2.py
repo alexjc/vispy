@@ -208,7 +208,7 @@ class CanvasBackend(BaseCanvasBackend):
         if context.shared.ref is self:
             share = None
         else:
-            other = context.ref
+            other = context.shared.ref
             share = other._id.window, other._native_context
             sdl2.SDL_GL_MakeCurrent(*share)
             sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1)

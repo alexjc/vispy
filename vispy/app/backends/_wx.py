@@ -212,8 +212,8 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         if context.shared.ref is self:
             self._gl_context = None  # set for real once we know self._canvas
         else:
-            #self._gl_attribs = context.ref._gl_attribs
-            self._gl_context = context.ref._gl_context
+            #self._gl_attribs = context.shared.ref._gl_attribs
+            self._gl_context = context.shared.ref._gl_context
         
         style = (wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX |
                  wx.SYSTEM_MENU | wx.CAPTION | wx.CLIP_CHILDREN)
