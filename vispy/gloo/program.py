@@ -285,7 +285,7 @@ class Program(GLObject):
                         assert False  # This should not happen
                     # Store and send GLIR command
                     self._user_variables[name] = data
-                    data._assign_glir_queue(self._glir)
+                    self.glir.associate(data.glir)
                     self._glir.command('TEXTURE', self._id, name, data.id)
                 else:
                     # Normal uniform; convert to np array and check size
@@ -320,7 +320,7 @@ class Program(GLObject):
                     # Store and send GLIR command
                     self._user_variables[name] = data
                     value = (data.id, data.stride, data.offset)
-                    data._assign_glir_queue(self._glir)
+                    self.glir.associate(data.glir)
                     self._glir.command('ATTRIBUTE', self._id,
                                        name, type, value)
                 else:
@@ -400,12 +400,12 @@ class Program(GLObject):
         canvas = get_current_canvas()
         assert canvas is not None
         
-        # Associate canvas and chech that the program can be used
-        self._assign_glir_queue(canvas.context.glir)
+        # Associate canvas
+        canvas.context.glir.associate(self.glir)
         
         # Indexbuffer
         if isinstance(indices, IndexBuffer):
-            indices._assign_glir_queue(canvas.context.glir)
+            canvas.context.glir.associate(indices.glir)
             logger.debug("Program drawing %r with index buffer" % mode)
             gltypes = {np.dtype(np.uint8): 'UNSIGNED_BYTE',
                        np.dtype(np.uint16): 'UNSIGNED_SHORT',
@@ -421,5 +421,6 @@ class Program(GLObject):
                             indices)
         
         # Process GLIR commands
-        canvas.context.shared.glir.flush()
-        canvas.context.glir.flush()
+        canvas.context.flush_commands()
+#         canvas.context.shared.glir.flush()
+#         canvas.context.glir.flush()

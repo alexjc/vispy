@@ -178,6 +178,7 @@ def test_application():
     title = 'default'
     with Canvas(title=title, size=size, app=app, show=True,
                 position=pos) as canvas:
+        context = canvas.context
         assert_true(canvas.create_native() is None)  # should be done already
         assert_is(canvas.app, app)
         assert_true(canvas.native)
@@ -238,8 +239,7 @@ def test_application():
         vert = "void main (void) {gl_Position = pos;}"
         frag = "void main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
-        program._assign_glir_queue(canvas.context.shared.glir)
-        assert_raises(RuntimeError, canvas.context.shared.glir.flush)
+        assert_raises(RuntimeError, program.glir.flush, context.shared.parser)
         
         vert = "uniform vec4 pos;\nvoid main (void) {gl_Position = pos;}"
         frag = "uniform vec4 pos;\nvoid main (void) {gl_FragColor = pos;}"
@@ -284,8 +284,7 @@ def test_application():
         # bad programs
         frag_bad = ("varying vec4 v_colors")  # no semicolon
         program = Program(vert, frag_bad)
-        program._assign_glir_queue(canvas.context.shared.glir)
-        assert_raises(RuntimeError, canvas.context.shared.glir.flush)
+        assert_raises(RuntimeError, program.glir.flush, context.shared.parser)
         frag_bad = None  # no fragment code. no main is not always enough
         assert_raises(ValueError, Program, vert, frag_bad)
 

@@ -13,19 +13,21 @@ from vispy.testing import run_tests_if_main
 from vispy.gloo.context import set_current_canvas, forget_canvas
 
 
+class DummyParser(gloo.glir.BaseGlirParser):
+    
+    def convert_shaders(self):
+        return 'desktop'
+    
+    def parse(self, commands):
+        pass
+
+
 class DummyCanvas:
     
     def __init__(self):
-        self.glir = gloo.glir.GlirQueue()
-        self.glir.flush = lambda *args: None
-    
-    @property
-    def context(self):
-        return self
-    
-    @property
-    def shared(self):
-        return self
+        self.context = gloo.context.GLContext()
+        self.context.shared.parser = DummyParser()
+        self.context.glir.flush = lambda *args: None  # No flush
 
 
 class ProgramTest(unittest.TestCase):
@@ -210,18 +212,19 @@ class ProgramTest(unittest.TestCase):
         program['A'] = np.zeros((10,), np.float32)
         
         dummy_canvas = DummyCanvas()
+        glir = dummy_canvas.context.glir
         set_current_canvas(dummy_canvas)
         try:
             # Draw arrays
             program.draw('triangles')
-            glir_cmd = program._glir.clear()[-1]
+            glir_cmd = glir.clear()[-1]
             assert glir_cmd[0] == 'DRAW'
             assert len(glir_cmd[-1]) == 2
             
             # Draw elements
             indices = gloo.IndexBuffer(np.zeros(10, dtype=np.uint8))
             program.draw('triangles', indices)
-            glir_cmd = program._glir.clear()[-1]
+            glir_cmd = glir.clear()[-1]
             assert glir_cmd[0] == 'DRAW'
             assert len(glir_cmd[-1]) == 3
             

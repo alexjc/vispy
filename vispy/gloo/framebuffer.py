@@ -123,12 +123,12 @@ class FrameBuffer(GLObject):
     def activate(self):
         """ Activate/use this frame buffer.
         """
+        # Send command
+        self._glir.command('FRAMEBUFFER', self._id, True)
         # Associate canvas now
         canvas = get_current_canvas()
         if canvas is not None:
-            self._assign_glir_queue(canvas.context.glir)
-        # Send command
-        self._glir.command('FRAMEBUFFER', self._id, True)
+            canvas.context.glir.associate(self.glir)
     
     def deactivate(self):
         """ Stop using this frame buffer, the previous framebuffer will be
@@ -158,7 +158,7 @@ class FrameBuffer(GLObject):
             setattr(self, '_%s_buffer' % format, None)
             self._glir.command('ATTACH', self._id, format, 0)
         elif isinstance(buffer, (Texture2D, RenderBuffer)):
-            buffer._assign_glir_queue(self._glir)
+            self.glir.associate(buffer.glir)
             setattr(self, '_%s_buffer' % format, buffer)
             self._glir.command('ATTACH', self._id, format, buffer.id)
         else:

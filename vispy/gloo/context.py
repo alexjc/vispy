@@ -19,7 +19,7 @@ an OpenGL context.
 from copy import deepcopy
 import weakref
 
-from .glir import GlirParser, GlirQueue
+from .glir import GlirQueue, BaseGlirParser, GlirParser
 from .wrappers import BaseGlooFunctions
 
 _default_dict = dict(red_size=8, green_size=8, blue_size=8, alpha_size=8,
@@ -63,7 +63,7 @@ def set_current_canvas(canvas):
     """ Make a canvas active. Used primarily by the canvas itself.
     """
     # Notify glir 
-    canvas.context.glir.command('CURRENT', 0)
+    canvas.context._do_CURRENT_command = True
     # Try to be quick
     if canvasses and canvasses[-1]() is canvas:
         return
@@ -92,8 +92,8 @@ class GLContext(BaseGlooFunctions):
         self._set_config(config)
         self._shared = shared if (shared is not None) else GLShared()
         assert isinstance(self._shared, GLShared)
-        # This object has a unique glir queue, but shares the parser 
-        self._glir = GlirQueue(self.shared.glir.parser)
+        self._glir = GlirQueue()
+        self._do_CURRENT_command = False  # flag that CURRENT cmd must be given
     
     def __repr__(self):
         return "<GLContext at 0x%x>" % id(self)
@@ -135,6 +135,14 @@ class GLContext(BaseGlooFunctions):
         """
         return self._shared
     
+    def flush_commands(self, event=None):
+        """ Flush
+        """
+        if self._do_CURRENT_command:
+            self._do_CURRENT_command = False
+            self.shared.parser.parse([('CURRENT', 0)])
+        self.glir.flush(self.shared.parser)
+
 
 class GLShared(object):
     """ Representation of a "namespace" that can be shared between
@@ -152,7 +160,7 @@ class GLShared(object):
     # left, things should Just Work. 
     
     def __init__(self):
-        self._glir = GlirQueue(GlirParser())  # The context holds *the* parser
+        self._parser = GlirParser()
         self._name = None
         self._refs = []
     
@@ -160,11 +168,14 @@ class GLShared(object):
         return "<GLShared of %s backend at 0x%x>" % (str(self.name), id(self))
     
     @property
-    def glir(self):
-        """ The glir queue dedicated for commands related to shared
-        objects such as textures, buffers and programs.
-        """
-        return self._glir
+    def parser(self):
+        """The GLIR parser (shared between contexts) """
+        return self._parser
+
+    @parser.setter
+    def parser(self, parser):
+        assert isinstance(parser, BaseGlirParser) or parser is None
+        self._parser = parser
     
     def add_ref(self, name, ref):
         """ Add a reference for the backend object that gives access

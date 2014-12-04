@@ -356,8 +356,9 @@ class DataBufferView(DataBuffer):
         self._dtype = base.dtype
         self._nbytes = self.size * self.itemsize
     
-    def _assign_glir_queue(self, *args, **kwargs):
-        self.base._assign_glir_queue(*args, **kwargs)
+    @property
+    def glir(self):
+        return self._base.glir
     
     @property
     def id(self):

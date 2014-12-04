@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 
 
-from .glir import ProxyGlirQueue
+from .glir import GlirQueue
 
 
 class GLObject(object):
@@ -31,16 +31,11 @@ class GLObject(object):
         
         # Create our temporary GLIR queue in which commands can be queued
         # until we get associated with a canvas and get our final queue.
-        self._glir = ProxyGlirQueue()
+        self._glir = GlirQueue()
         #print(self._GLIR_TYPE, 'takes', self._context)
         
         # Give glir command to create GL representation of this object
         self._glir.command('CREATE', self._id, self._GLIR_TYPE)
-    
-    def _assign_glir_queue(self, glir_queue):
-        """ To assign a destination queue for our proxy.
-        """
-        self._glir.assign(glir_queue)
     
     def __del__(self):
         # You never know when this is goint to happen. The window might
@@ -64,3 +59,9 @@ class GLObject(object):
         in GLIR. id's are unique within a process.
         """
         return self._id
+    
+    @property
+    def glir(self):
+        """ The glir queue for this object.
+        """
+        return self._glir

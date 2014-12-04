@@ -527,8 +527,12 @@ class BaseGlooFunctions(object):
         GLIR commands. If the GLIR interpreter is remote (e.g. WebGL), this
         function will return before GL has finished processing the commands.
         """
-        self.glir.command('FUNC', 'glFinish')
-        self.glir.flush()  # Process GLIR commands
+        if hasattr(self, 'flush_commands'):
+            context = self
+        else:
+            context = get_current_canvas().context
+        context.glir.command('FUNC', 'glFinish')
+        context.flush_commands()  # Process GLIR commands
     
     def flush(self):
         """Flush GL commands
@@ -536,8 +540,12 @@ class BaseGlooFunctions(object):
         This is a wrapper for glFlush(). This also flushes the GLIR
         command queue.
         """
-        self.glir.command('FUNC', 'glFlush')
-        self.glir.flush()  # Process GLIR commands
+        if hasattr(self, 'flush_commands'):
+            context = self
+        else:
+            context = get_current_canvas().context
+        context.glir.command('FUNC', 'glFlush')
+        context.flush_commands()  # Process GLIR commands
     
     def set_hint(self, target, mode):
         """Set OpenGL drawing hint
@@ -611,8 +619,8 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
         of the framebuffer at index [0, 0] in the returned array.
     """
     # Check whether the GL context is direct or remote
-    glir = get_current_canvas().context.glir
-    if glir.is_remote():
+    context = get_current_canvas().context
+    if context.shared.parser.is_remote():
         raise RuntimeError('Cannot use read_pixels() with remote GLIR parser')
     
     finish()  # noqa - finish first, also flushes GLIR commands
