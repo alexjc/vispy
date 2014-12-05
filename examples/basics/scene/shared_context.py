@@ -24,8 +24,8 @@ canvas2 = scene.SceneCanvas(keys='interactive', show=True)
 view2 = canvas2.central_widget.add_view()
 view2.set_camera('panzoom')
 
-## Simple surface plot example
-## x, y values are not specified, so assumed to be 0:50
+# Simple surface plot example
+# x, y values are not specified, so assumed to be 0:50
 z = gaussian_filter(np.random.normal(size=(50, 50)), (1, 1)) * 10
 p1 = scene.visuals.SurfacePlot(z=z, color=(0.5, 0.5, 1, 1), shading='smooth')
 p1.transform = scene.transforms.AffineTransform()
@@ -37,6 +37,8 @@ view2.add(p1)
 
 # Add a 3D axis to keep us oriented
 axis = scene.visuals.XYZAxis(parent=view1.scene)
+
+canvas = canvas1  # allow running this example in out test suite
 
 if __name__ == '__main__':
     if sys.flags.interactive == 0:
