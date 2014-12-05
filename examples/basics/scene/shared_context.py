@@ -20,7 +20,8 @@ view1 = canvas1.central_widget.add_view()
 view1.set_camera('turntable', mode='perspective', up='z', distance=2,
                  azimuth=30., elevation=30.)
 
-canvas2 = scene.SceneCanvas(keys='interactive', show=True)
+canvas2 = scene.SceneCanvas(keys='interactive', show=True, 
+                            context=canvas1.context)
 view2 = canvas2.central_widget.add_view()
 view2.set_camera('panzoom')
 
