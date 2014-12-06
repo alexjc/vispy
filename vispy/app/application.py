@@ -12,7 +12,7 @@ from __future__ import division
 import os
 import sys
 
-from . import backends
+from . import backends, inputhook
 from .backends import CORE_BACKENDS, BACKEND_NAMES, BACKENDMAP, TRIED_BACKENDS
 from .. import config
 from .base import BaseApplicationBackend as ApplicationBackend  # noqa
@@ -82,10 +82,39 @@ class Application(object):
         # Ensure that the native app exists
         self.native
 
-    def run(self):
+    def is_interactive(self):
+        # The Python interpreter sets sys.flags correctly, so use them!
+        if sys.flags.interactive:
+            return True
+
+        # IPython does not set sys.flags when -i is specified, so here
+        # we check the application singleton and determine based on a
+        # variable it sets.
+        try:
+            from IPython.config.application import Application
+            ipython = Application.instance()
+            return ipython.interact
+        except:
+            return False
+
+    def run(self, allow_interactive=True):
         """ Enter the native GUI event loop.
+
+        Parameters
+        ----------
+        allow_interactive : bool
+            Is the application allowed to handle interactive mode for console
+            terminals?  By default, typing ``python -i main.py`` results in
+            an interactive shell that also regularly calls the VisPy event
+            loop.  In this specific case, the run() function will terminate
+            immediately and rely on the interpreter's input loop to be run
+            after script execution.
         """
-        return self._backend._vispy_run()
+
+        if allow_interactive and self.is_interactive():
+            inputhook.set_interactive(enabled=True, app=self)
+        else:
+            return self._backend._vispy_run()
 
     def reuse(self):
         """ Called when the application is reused in an interactive session.
